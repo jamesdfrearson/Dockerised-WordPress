@@ -1,0 +1,65 @@
+version: '3.7'
+
+services:
+  wordpress:
+    image: wordpress:latest
+    container_name: ${WEBSITE_NAME}
+    volumes:
+      - ./wordpress/:/var/www/html/
+    depends_on:
+      - database
+    networks:
+      - website
+    links:
+      - database
+    ports:
+      - ${WEBSITE_PORT}:80
+    restart: always
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
+
+  database:
+    container_name: database
+    image: mysql
+    volumes:
+      - ./database:/var/lib/mysql
+    networks:
+      - website
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE_NAME}
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_TCP_PORT: ${DATABASE_PORT}
+    ports:
+      - ${DATABASE_PORT}:3306
+    restart: always
+
+  phpMyAdmin:
+    container_name: phpMyAdmin
+    image: phpmyadmin/phpmyadmin
+    depends_on:
+      - database
+    environment:
+      PMA_PORT: ${DATABASE_PORT}
+      PMA_ARBITRARY: 1
+      PMA_HOST: database
+      MYSQL_USER: ${MYSQL_USERNAME}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      PMA_USER: ${MYSQL_USERNAME}
+      PMA_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    networks:
+      - website
+    links:
+      - database
+    ports:
+      - ${PMA_PORT}:80
+    restart: always
+
+networks:
+  website:
+    name: website
